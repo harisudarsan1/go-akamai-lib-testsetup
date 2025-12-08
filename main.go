@@ -22,7 +22,7 @@ const (
 
 	ContractID   = "ctr_1-12345" // Your Contract ID
 	GroupID      = "grp_12345"   // Your Group ID
-	ProductID    = "ion standard"     // Example product
+	ProductID    = "ion"     // Example product
 	PropertyName = "my-api-gateway"
 	UserDomain   = "api.example.com"
 )
@@ -352,7 +352,7 @@ func updatePropertyRules(ctx context.Context, papiClient papi.PAPI, prop *papi.P
 	}
 
 	// Add origin behavior if not already present
-	originHostname := "origin-" + domain
+	originHostname := "server:IP"
 	originExists := false
 	for _, behavior := range ruleTree.Rules.Behaviors {
 		if behavior.Name == "origin" {
