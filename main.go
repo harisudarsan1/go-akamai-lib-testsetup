@@ -15,16 +15,24 @@ import (
 	"github.com/akamai/AkamaiOPEN-edgegrid-golang/v12/pkg/session"
 )
 
-// --- Configuration (replace with your real values) ---
+// --- Configuration ---
 const (
 	EdgercPath    = "~/.edgerc"
 	EdgercSection = "default"
 
-	ContractID   = "ctr_1-12345" // Your Contract ID
-	GroupID      = "grp_12345"   // Your Group ID
-	ProductID    = "ion"     // Example product
+	// Group name to auto-discover Contract ID and Product IDs
+	GroupName = "CTM LABS PRIVATE LIMITED (Kluisz)-V-620VL0G"
+
+	// Property configuration (customize these)
 	PropertyName = "my-api-gateway"
 	UserDomain   = "api.example.com"
+)
+
+// Runtime configuration (auto-discovered or from cache)
+var (
+	ContractID string
+	GroupID    string
+	ProductID  string
 )
 
 func main() {
@@ -35,12 +43,33 @@ func main() {
 		log.Fatalf("edgegrid/session init failed: %v", err)
 	}
 
-	fmt.Println(">> Starting Onboarding Flow for:", UserDomain)
-
 	// --- Clients ---
-	cpsClient := cps.Client(sess)
 	papiClient := papi.Client(sess)
+	cpsClient := cps.Client(sess)
 	appsecClient := appsec.Client(sess)
+
+	// ---------------------------------------------------------
+	// STEP 0: Auto-discover Contract ID, Group ID, and Product IDs
+	// ---------------------------------------------------------
+	fmt.Println(">> Step 0: Discovering Contract and Product Information...")
+	config, err := DiscoverAndCache(ctx, papiClient, GroupName)
+	if err != nil {
+		log.Fatalf("Failed to discover contract information: %v", err)
+	}
+
+	// Set runtime configuration
+	ContractID = config.ContractID
+	GroupID = config.GroupID
+
+	// Use first available product or default
+	if len(config.ProductIDs) > 0 {
+		ProductID = config.ProductIDs[0]
+	} else {
+		log.Fatalf("No products found for contract %s", ContractID)
+	}
+
+	fmt.Printf("✅ Using Contract: %s (Group: %s, Product: %s)\n\n", ContractID, GroupID, ProductID)
+	fmt.Println(">> Starting Onboarding Flow for:", UserDomain)
 
 	// ---------------------------------------------------------
 	// STEP 1: Handle SSL / CPS (mocked)
